@@ -2,6 +2,8 @@
 import os
 import logging
 import sys
+import argparse
+import pickle
 
 def file_timestamp(path):
     st = os.stat(path)
@@ -9,7 +11,6 @@ def file_timestamp(path):
 
 class Incomplete(Exception):
     pass
-
 
 class Configure:
     LESSON_DIR = "lessons"
@@ -19,6 +20,8 @@ class Configure:
 
 \newcommand{{\lessonno}}{{{0:d}}}
 \newcommand{{\lessonnoo}}{{{0:02d}}}
+\newcommand{{\authorname}}{{{author_name}}}
+\newcommand{{\authormail}}{{\texttt{{<{author_mail}>}}}}
 
 \input{{../../common/slides-conf.tex}}
 \input{{content.tex}}
@@ -45,7 +48,9 @@ configure.py:
 
     REQUIRED_FILES = ["content.tex"]
 
-    def __init__(self, base_path, force_rebuild=False):
+    def __init__(self, base_path,
+            force_rebuild=False,
+            **env_upd):
         super().__init__()
         self.base_path = base_path
         try:
@@ -59,6 +64,27 @@ configure.py:
         if force_rebuild:
             self.last_build = force_rebuild
         self.lessons = {}
+        self.env_file = os.path.join(self.base_path, "configure.env")
+        if os.path.isfile(self.env_file):
+            try:
+                with open(self.env_file, "rb") as f:
+                    self.env = pickle.load(f)
+            except (IOError, OSError) as err:
+                logging.warn("could not restore pickle'd state: %s", err)
+                os.unlink(self.env_file)
+                pass
+        else:
+            self.env = {
+                "author_name": r"\\authorname",
+                "author_mail": r"\\authormail",
+            }
+        self.env.update(env_upd)
+        try:
+            with open(self.env_file, "wb") as f:
+                pickle.dump(self.env, f)
+        except (IOError, OSError) as err:
+            logging.warn("could not save pickle'd state: %s", err)
+        logging.debug("LaTeX substitution env: %r", self.env)
 
     def check_lesson_directory(self, path):
         for filename in self.REQUIRED_FILES:
@@ -95,7 +121,8 @@ configure.py:
 
         with open(slides_path, "w") as f:
             f.write(self.SLIDES_TEMPLATE.format(
-                lesson_no
+                lesson_no,
+                **self.env
             ))
 
     def configure_lesson(self, lesson_no, path):
@@ -141,10 +168,62 @@ configure.py:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG,
+
+    parser = argparse.ArgumentParser(
+        description="""\
+Create a Makefile and some auxilliary documents to build the slides for the
+lessons. Autodiscovers lessons in ./lessons/, looking for directory names which
+can be represented as an integer number. Directories must contain the neccessary
+files, otherwise the build will fail (with appropriate error messages). You need
+at least a `content.tex` file which contains the frame environments."""
+    )
+    parser.add_argument(
+        "-B", "--force-rebuild",
+        dest="force_rebuild",
+        action="store_true",
+        default=False,
+        help="Force rebuild of all files created by this program."
+    )
+    parser.add_argument(
+        "-A", "--author-name",
+        dest="author_name",
+        help="LaTeX sourcecode to represent the authors name. Defaults to \
+\\\\authorname."
+    )
+    parser.add_argument(
+        "--author-mail",
+        dest="author_mail",
+        help="E-Mail adress to contact the author. Defaults to \\\\authormail."
+    )
+    parser.add_argument(
+        "-v",
+        dest="verbosity",
+        action="append_const",
+        default=[],
+        const=1,
+        help="Increase verbosity level."
+    )
+
+    args = parser.parse_args()
+
+    verbosity = len(args.verbosity)
+    args.verbosity = None
+
+    verbosity = max(0, min(2, verbosity))
+
+    level = {
+        0: logging.WARN,
+        1: logging.INFO,
+        2: logging.DEBUG
+    }
+
+    logging.basicConfig(level=level[verbosity],
                         format='%(levelname)-8s %(message)s')
 
-    configure = Configure(os.getcwd())
+    configure = Configure(
+        os.getcwd(),
+        **dict((k, v) for k, v in args._get_kwargs() if v is not None)
+    )
     try:
         configure.autodiscover_lessons()
         configure.configure_lessons()

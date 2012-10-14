@@ -21,6 +21,7 @@ class Configure:
 \newcommand{{\authorname}}{{{author_name}}}
 \newcommand{{\authormail}}{{\texttt{{<{author_mail}>}}}}
 \newcommand{{\extratitlepageline}}{{{extra_line}}}
+\usetheme{{{theme}}}
 """
     SLIDES_TEMPLATE = r"""
 \input{{../../common/slides-head.tex}}
@@ -34,7 +35,7 @@ class Configure:
 
     MAKEFILE_HEADER = """\
 LATEX=pdflatex -halt-on-error
-COMMON_DEPS=configure.py
+COMMON_DEPS=
 SLIDES_COMMON_DEPS=common/slides-*.tex
 SLIDES="""+SLIDES_FILENAME+"""
 
@@ -42,13 +43,11 @@ default: slides
 """
 
     LESSON_SLIDES_TARGET = """\
-lesson-slides-{lesson_no:02d}: {rel_path}/${{SLIDES}} {rel_path}/"""+DOCUMENT_FILENAME+""" ${{SLIDES_COMMON_DEPS}} ${{COMMON_DEPS}}
+{rel_path}/slides.pdf: {rel_path}/${{SLIDES}} {rel_path}/"""+DOCUMENT_FILENAME+""" ${{SLIDES_COMMON_DEPS}} ${{COMMON_DEPS}}
 \tcd {rel_path}; $(LATEX) $(SLIDES) && $(LATEX) $(SLIDES)
 """
 
     MAKEFILE_FOOTER = """\
-configure.py:
-\t./configure.py
 """
 
     REQUIRED_FILES = [DOCUMENT_FILENAME]
@@ -73,7 +72,8 @@ configure.py:
         self.env = {
             "author_name": r"\\authorname",
             "author_mail": r"\\authormail",
-            "extra_line": r""
+            "extra_line": r"",
+            "theme": r"Dresden"
         }
         if os.path.isfile(self.env_file):
             try:
@@ -102,13 +102,15 @@ configure.py:
     def autodiscover_lessons(self):
         path = os.path.join(self.base_path, self.LESSON_DIR)
         for filename in os.listdir(path):
+            full_path = os.path.join(path, filename)
+            if not os.path.isdir(full_path):
+                continue
             try:
                 lesson_no = int(filename)
             except ValueError:
                 # not a valid lesson directory
                 logging.warn("found garbage directory name: `%s'", filename)
                 continue
-            full_path = os.path.join(path, filename)
             if not self.check_lesson_directory(full_path):
                 logging.error("lesson directory `%s' is missing files", filename)
                 raise Incomplete()
@@ -166,7 +168,7 @@ configure.py:
                 ))
 
             f.write("slides: {0}\n".format(
-                " ".join("lesson-slides-{0:02d}".format(no) for no in self.lessons.keys())
+                " ".join("{0}/slides.pdf".format(os.path.relpath(path, self.base_path)) for path in self.lessons.values())
             ))
 
             f.write(self.MAKEFILE_FOOTER)
@@ -212,6 +214,11 @@ configure.py, as the state is saved to configure.env."""
         help="Line to show below the default title page stuff."
     )
     parser.add_argument(
+        "--theme",
+        dest="theme",
+        help="Beamer theme to use."
+    )
+    parser.add_argument(
         "-v",
         dest="verbosity",
         action="append_const",
@@ -245,4 +252,5 @@ configure.py, as the state is saved to configure.env."""
         configure.configure_lessons()
     except Incomplete:
         print("Configure incomplete.")
+        sys.exit(1)
 

@@ -14,31 +14,36 @@ class Incomplete(Exception):
 
 class Configure:
     LESSON_DIR = "lessons"
+    DOCUMENT_FILENAME = "document.tex"
+    SLIDES_ENV_FILENAME = "slides-env.tex"
     SLIDES_FILENAME = "slides.tex"
-    SLIDES_TEMPLATE = r"""
-\input{{../../common/slides-head.tex}}
-
-\newcommand{{\lessonno}}{{{0:d}}}
-\newcommand{{\lessonnoo}}{{{0:02d}}}
+    SLIDES_ENV_TEMPLATE = r"""
 \newcommand{{\authorname}}{{{author_name}}}
 \newcommand{{\authormail}}{{\texttt{{<{author_mail}>}}}}
-
+\newcommand{{\extratitlepageline}}{{{extra_line}}}
+"""
+    SLIDES_TEMPLATE = r"""
+\input{{../../common/slides-head.tex}}
+\input{{../../common/"""+SLIDES_ENV_FILENAME+r"""}}
+\newcommand{{\lessonno}}{{{0:d}}}
+\newcommand{{\lessonnoo}}{{{0:02d}}}
 \input{{../../common/slides-conf.tex}}
-\input{{content.tex}}
-\input{{../../common/slides-foot.tex}}
+
+\input{{document.tex}}
 """
 
     MAKEFILE_HEADER = """\
 LATEX=pdflatex -halt-on-error
 COMMON_DEPS=configure.py
 SLIDES_COMMON_DEPS=common/slides-*.tex
+SLIDES="""+SLIDES_FILENAME+"""
 
 default: slides
 """
 
     LESSON_SLIDES_TARGET = """\
-lesson-slides-{lesson_no:02d}: {rel_path}/slides.tex {rel_path}/content.tex ${{SLIDES_COMMON_DEPS}} ${{COMMON_DEPS}}
-\tcd {rel_path}; $(LATEX) slides.tex && $(LATEX) slides.tex
+lesson-slides-{lesson_no:02d}: {rel_path}/${{SLIDES}} {rel_path}/"""+DOCUMENT_FILENAME+""" ${{SLIDES_COMMON_DEPS}} ${{COMMON_DEPS}}
+\tcd {rel_path}; $(LATEX) $(SLIDES) && $(LATEX) $(SLIDES)
 """
 
     MAKEFILE_FOOTER = """\
@@ -46,7 +51,7 @@ configure.py:
 \t./configure.py
 """
 
-    REQUIRED_FILES = ["content.tex"]
+    REQUIRED_FILES = [DOCUMENT_FILENAME]
 
     def __init__(self, base_path,
             force_rebuild=False,
@@ -65,19 +70,20 @@ configure.py:
             self.last_build = force_rebuild
         self.lessons = {}
         self.env_file = os.path.join(self.base_path, "configure.env")
+        self.env = {
+            "author_name": r"\\authorname",
+            "author_mail": r"\\authormail",
+            "extra_line": r""
+        }
         if os.path.isfile(self.env_file):
             try:
                 with open(self.env_file, "rb") as f:
-                    self.env = pickle.load(f)
+                    self.pickled_env = pickle.load(f)
+                self.env.update(self.pickled_env)
             except (IOError, OSError) as err:
                 logging.warn("could not restore pickle'd state: %s", err)
                 os.unlink(self.env_file)
                 pass
-        else:
-            self.env = {
-                "author_name": r"\\authorname",
-                "author_mail": r"\\authormail",
-            }
         self.env.update(env_upd)
         try:
             with open(self.env_file, "wb") as f:
@@ -122,7 +128,6 @@ configure.py:
         with open(slides_path, "w") as f:
             f.write(self.SLIDES_TEMPLATE.format(
                 lesson_no,
-                **self.env
             ))
 
     def configure_lesson(self, lesson_no, path):
@@ -138,6 +143,9 @@ configure.py:
             self.final_touch(path, timestamp)
 
     def configure_lessons(self):
+        slides_env_file = os.path.join(self.base_path, "common", self.SLIDES_ENV_FILENAME)
+        with open(slides_env_file, "w") as f:
+            f.write(self.SLIDES_ENV_TEMPLATE.format(**self.env))
         for lesson_no, path in self.lessons.items():
             self.configure_lesson(lesson_no, path)
         timestamp = self.create_makefile()
@@ -175,7 +183,10 @@ Create a Makefile and some auxilliary documents to build the slides for the
 lessons. Autodiscovers lessons in ./lessons/, looking for directory names which
 can be represented as an integer number. Directories must contain the neccessary
 files, otherwise the build will fail (with appropriate error messages). You need
-at least a `content.tex` file which contains the frame environments."""
+at least a `content.tex` file which contains the frame environments.
+
+You dont have to pass the personalization arguments on each call to
+configure.py, as the state is saved to configure.env."""
     )
     parser.add_argument(
         "-B", "--force-rebuild",
@@ -194,6 +205,11 @@ at least a `content.tex` file which contains the frame environments."""
         "--author-mail",
         dest="author_mail",
         help="E-Mail adress to contact the author. Defaults to \\\\authormail."
+    )
+    parser.add_argument(
+        "--extra-line",
+        dest="extra_line",
+        help="Line to show below the default title page stuff."
     )
     parser.add_argument(
         "-v",

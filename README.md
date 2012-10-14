@@ -46,4 +46,29 @@ Wenn nur die Folien zu einer bestimmten Übung erwünscht sind, z.B. zur Nullten
 
 Ansonsten werden alle Folien gebaut (was einige Zeit dauern kann).
 
+Struktur
+--------
+
+*   In ``common/`` liegen TeX-Sources die von allen Folien verwendet werden.
+    Unter anderem landet dort die durch ``./configure.py`` vorgenommene
+    Konfiguration.
+
+*   In ``lessons/`` sollten nur Ordner mit ganzzahligem Namen liegen. Die Zahl
+    gibt den Index der Übung an (z. B. ``lessons/04`` für die vierte Übung).
+    ``configure.py`` durchsucht das Verzeichnis ``lessons`` und erstellt das
+    Makefile anhand der vorhandenen Ordner.
+
+    In den Übungsorndern muss mindestens eine ``document.tex`` liegen, welche
+    das eigentliche LaTeX-Beamer-Dokument (inkl.
+    ``\begin{document}..\end{document}``, aber ohne ``\documentclass``) enthält.
+
+    Sollte diese Datei fehlen bricht ``configure.py`` mit einem Fehler ab!
+
+*   ``configure.py`` bietet einige Einstellungsmöglichkeiten an, die in einem
+    internen Format in ``configure.env`` gespeichert werden, sodass sie nicht
+    bei jedem Aufruf von ``configure.py`` erneut angegeben werden müssen. Die
+    ``configure.env``-Datei ist in der ``.gitignore`` eingetragen, bleibt also
+    immer nur auf dem lokalen System.
+
+
    [1]: http://wiki.neo-layout.org/browser/latex/Standard-LaTeX/

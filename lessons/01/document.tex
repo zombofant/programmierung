@@ -1,0 +1,134 @@
+
+\title{Programmierung}
+\subtitle{1. Übung}
+
+\newcommand{\s}{\textvisiblespace}
+\newcommand{\bs}{\s\s\s\s}
+
+\begin{document}
+    \begin{frame}
+        \frontframe
+    \end{frame}
+
+    \section{Organisatorisches}
+    \subsection{~}
+
+    \begin{frame}
+        \frametitle{Übungsablauf}
+        Primär Präsenzübung. Das heißt:
+        \begin{itemize}
+        \item Bearbeitung der Aufgabe in der Übungsstunde
+        \item Hilfestellungen von mir :)
+        \item Abgabe per E-Mail entweder in der Stunde oder von zu Hause nach
+            evtl. Schönheitskorrekturen bzw. Dokumentation am Programm
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Bewertung}
+        \begin{itemize}
+        \item 5 Punkte
+            \pause
+            \begin{itemize}
+            \item Funktionalität ca. 75\% der Punkte
+            \item 25\% Dokumentation
+            \end{itemize}
+        \pause
+        \item 1 Zusatzpunkt für Form, Eleganz, Kreativität …
+        \pause
+        \item Abgegebene Übungen: 12 insgesamt, davon eine unbewertet
+        \item Zum Bestehen des Moduls erforderlich: 33\,Punkte aus \emph{mindestens
+            9 Übungen!}
+        \item 100\% bei 55\,Punkten
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Reformationstag 31. Oktober}
+        \begin{itemize}
+        \item Übung fällt aus!
+        \pause
+        \item Aber: Dafür bearbeitung der Aufgabe selbstständig zu Hause,
+            einsenden per E-Mail
+        \item Bewertung ebenso wie diese Übung
+        \end{itemize}
+    \end{frame}
+
+    \section{Python-Syntax addendum}
+    \subsection{~}
+
+    \begin{frame}
+        %\textvisiblespace
+        \frametitle{Whitespace?}
+        %xkcd goes here
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Einrückung}
+        \begin{itemize}
+        \item Wo andere Sprachen Klammern, \texttt{begin}/\texttt{end}
+            erfordern, erfordert Python Einrückung
+        \pause
+        \item Vorteil: Code wird automatisch lesbarer
+        \item Nachteil: Einige fühlen sich dadurch eingeengt
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Einrückung}
+        \begin{columns}%
+        \column{.45\linewidth}
+            \small \ttfamily
+            def min(a, b): \\
+            \bs if a > b: \\
+            \bs \bs return b \\
+            \bs else: \\
+            \bs \bs return a \\
+        \column{.5\linewidth}
+            \begin{itemize}
+            \item erste vier Leerzeichen markieren den Block für \texttt{def min(a, b)}
+            \item zweite vier Leerzeichen markieren den Block für \texttt{if} bzw. \texttt{else}
+            \end{itemize}
+        \end{columns}
+    \end{frame}
+
+    \begin{frame}
+        \frametitle{Konvention}
+        \begin{itemize}
+        \item Python Code Styleguide ist in PEP-0008 festgeschrieben: \\
+            \url{http://www.python.org/dev/peps/pep-3333/}
+        \item Für diese Übungsreihe gilt:
+            \begin{itemize}
+            \item Vier Leerzeichen Einrückung (\textbf{keine Tabs})
+            \item Korrekte Angabe des Encodings (UTF-8 empfohlen): \\
+                \texttt{\# encoding=utf-8}
+            \end{itemize}
+        \end{itemize}
+    \end{frame}
+
+    \section{Aufgabe}\subsection{~}
+
+    \begin{frame}
+        \frametitle{Interaktive Python-Shell}
+        \begin{enumerate}[1.]
+        \item Numerische Operationen
+            \begin{enumerate}[a)]
+            \item Addition
+            \item Subtraktion
+            \item Multiplikation
+            \item Division und Divisionsrest
+            \end{enumerate}
+        \item Textoperationen
+            \begin{enumerate}[a)]
+            \item Verketten
+            \item Vervielfachen
+            \item Länge bestimmen
+            \item Slicing
+            \end{enumerate}
+        \item Potenzen
+        \item Ungerade Zahlen
+        \item Primzahlen
+        \end{enumerate}
+    \end{frame}
+
+\end{document}

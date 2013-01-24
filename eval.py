@@ -24,7 +24,7 @@ class bcolors:
         self.ENDC = ''
 
 MIN_SUBMISSIONS = 9
-MAX_SUBMISSIONS = 11
+MAX_SUBMISSIONS = 12
 MIN_UNIT = 3
 MAX_UNIT = 13
 
@@ -33,7 +33,8 @@ MAX_POINTS_PER_SUBMISSION = 6.0
 MAX_POINTS = 55.0
 MIN_POINTS = MAX_POINTS * 0.6
 
-MAX_MISSING_SUBMISSIONS = 2
+# one more than usual because two submissions have been combined into one
+MAX_MISSING_SUBMISSIONS = 3
 
 """
 contains commits which are to be ignored and should not produce any
@@ -44,7 +45,7 @@ commitWhitelist = [
 looseMatch = re.compile("[0-9a-f]{40} (Amm?ended correction|corrected|imported).*", re.I)
 ignore = re.compile("[0-9a-f]{40} (Merge|((Amm?ended )?[Ss]ubmission|\[ignore\])).*", re.I)
 extractCommitId = re.compile("^[0-9a-f]{40}", re.I)
-corrected = re.compile("([0-9a-fA-F]{40}) (Amm?ended correction( of)?|corrected|imported):? (([0-9]{1,2})/(\w+)|(\w+)/([0-9]{1,2}))\W?\s*(([0-9.]+)\s*\+\s*([0-9.]+)\s*=)?\s*([0-9.]+)?(\s+pts)?", re.I)
+corrected = re.compile("([0-9a-fA-F]{40}) (Amm?ended correction( of)?|corrected|imported):? (([0-9]{1,2})/(\w+)|(\w+)/([0-9]{1,2}))\W?\s*(([0-9.]+)\s*\+\s*([0-9.]+)\s*=)?\s*([0-9.]+)?(\s+pts)?(!)?", re.I)
 
 class Acknowledgement(object):
     def __init__(self, unit, person, points, style):
@@ -238,8 +239,13 @@ def parseCommits():
             else:
                 points = float(groups[-2])
         if points == 0:
-            print("Not acknowledging {0}. Zero points.".format(groups[0]), file=sys.stderr)
-            continue
+            # print("Not acknowledging {0}. Zero points.".format(groups[0]), file=sys.stderr)
+            if groups[-1] == "!":
+                print("Not acknowledging {0} (zero points) as enforced by !".format(groups[0]), file=sys.stderr)
+                points = None
+                style = None
+            else:
+                print("warn: {0} has zero points. did you mean not to commit this one as corrected?".format(groups[0]), file=sys.stderr)
         acknowledgements.append(Acknowledgement(unit, person, points, style))
 
     if commitWhitelistMatchCount > 0:
@@ -253,7 +259,11 @@ def filterAcknowledgements(acknowledgements):
         if t in filterSet:
             continue
         filterSet.add(t)
-        yield ack
+        if ack.points is not None:
+            print("yes", ack)
+            yield ack
+        else:
+            print("no", ack)
 
 def getPersonData(acknowledgements):
     personMap = {}
